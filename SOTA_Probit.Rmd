@@ -1,0 +1,218 @@
+---
+title: "SOTA probit"
+author: "WRI Mexico Interns"
+date: "10/22/2021"
+output: beamer_presentation
+header-includes: \usepackage{dcolumn}
+---
+
+
+```{r Setup, include=FALSE}
+rm(list=ls()) # borrar todo en la memoria
+options(digits = 10) # decimales
+options(scipen = 100) # para evitar notacion scientifica que afectaba la leyenda de la grafica
+knitr::opts_chunk$set(echo = FALSE) # Para que predeterminadamente no salga el output de los codigos.
+
+#######################
+####  Directorio  #####
+#######################
+#### (Cambiar solo despues del "~/Desktop/ a donde este guardado la carpeta) 
+knitr::opts_knit$set(root.dir = "~/Desktop/WRI/SOTA")  # Directorio
+getwd()
+######################
+
+knitr::opts_chunk$set(out.width = '100%', dpi=300) # Resolucion y tamanio de figuras
+knitr::opts_chunk$set(fig.env="figure") # Latex figure environment
+
+# tinytex::install_tinytex() # Por si no está instalado o acualizado correr esta linea.
+```
+
+
+```{r Packages Instalation, include=FALSE}
+# Para instalar paquetes que no esten descargados que sean necesarios
+lista.de.paquete1 <- c("tidyverse","stargazer", "lmtest", "sandwich")
+nuevo.paquete1 <- lista.de.paquete1[!(lista.de.paquete1 %in% 
+                                          installed.packages()[,"Package"])]
+if(length(nuevo.paquete1)) install.packages(nuevo.paquete1, dependencies = TRUE, force = TRUE)
+
+```
+
+```{r Packages activation, include=FALSE}
+library(tidyverse)
+library(stargazer)
+library(lmtest)
+library(sandwich)
+```
+
+
+
+
+```{r include=FALSE}
+Data <- read.csv("CaseMatching_10.26.21.csv")
+```
+
+
+```{r include=FALSE}
+head(Data)
+tail(Data)
+str(Data)
+summary(Data)
+```
+
+
+# SDGs probit:
+
+```{r SDG probit, include=FALSE}
+SDG <- glm(Invest_Secured ~ YearsOperation + SDG2_Food + SDG6_Water + SDG7_Energy + SDG11_Cities + SDG12_Consumption + SDG_Other + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants,
+                           family = binomial(link = "probit"),
+                           data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(SDG)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+```{r SDG probit coeftes, include=FALSE}
+coeftest(SDG, vcov. = vcovHC, type = "HC1")
+```
+
+
+
+
+***
+
+
+
+
+# Buisness model probit:
+
+```{r Buisness model probit, include=FALSE}
+Business_Model <- glm(Invest_Secured ~ YearsOperation + BusinessModel_NewVenture + BusinessModel_Finance + BusinessModel_ProjectAccelerator + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants,
+                           family = binomial(link = "probit"),
+                           data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(Business_Model)["coefficients"], header = F, align = T, font.size = "scriptsize", column.sep.width = "0pt")
+?stargazer
+```
+
+
+```{r Buisness model probit Output, include=FALSE, results='asis'}
+stargazer(coeftest(Business_Model, vcov. = vcovHC, type = "HC1"))
+```
+
+
+
+
+***
+
+
+
+
+# Stage probit:
+
+```{r Stage probit, include=FALSE}
+Stage <- glm(Invest_Secured ~ YearsOperation + Stage_PilotResearch + Stage_ScaleUpStartUp + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants,
+                           family = binomial(link = "probit"),
+                           data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(Stage)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+
+```{r Stage probit output, include=FALSE, results='asis'}
+coeftest(Stage, vcov. = vcovHC, type = "HC1")
+```
+
+
+
+
+***
+
+
+
+
+# Region:
+
+```{r Region probit, include=FALSE}
+Region <- glm(Invest_Secured ~ YearsOperation + Region_EAPAC + Region_EU_CenAsia + Region_LATAM_C + Region_MENA + Region_NorthAm + Region_SouthAsia + Region_SSA + Region_Global + Region_Multiple + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants,
+                           family = binomial(link = "probit"),
+                           data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(Region)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+
+```{r Region probit output, include=FALSE, results='asis'}
+coeftest(Region, vcov. = vcovHC, type = "HC1")
+
+```
+
+***
+
+
+
+# Partner probit:
+
+```{r Partner probit, include=FALSE}
+Partner <- glm(Invest_Secured ~ YearsOperation + Partner_Business + Partner_CSO + Partner_FI + Partner_Gov + Partner_LocalBusiness + Partner_LocalCSO + Partner_LocalFI + Partner_LocalGov + LocalPartner + Platform_Partnerships2030 + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants,
+                           family = binomial(link = "probit"),
+                           data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(Partner)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+
+```{r Partner probit output, include=FALSE, results='asis'}
+coeftest(Partner, vcov. = vcovHC, type = "HC1")
+```
+
+
+***
+
+# Including only significant dummy variables with the remaining ones
+
+```{r include=FALSE}
+together <- glm(Invest_Secured ~ YearsOperation + SDG7_Energy + SDG11_Cities + Partner_LocalCSO + BusinessPlan_Funding + Team_index + MM_Index + Funding_Grants + SDG_Other,
+               family = binomial(link = "probit"),
+               data = Data)
+```
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(together)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+
+***
+
+
+# Eliminating statistically insignificant coeffcients
+
+
+```{r include=FALSE}
+eliminating <- glm(Invest_Secured ~ YearsOperation + SDG7_Energy + SDG11_Cities + Partner_LocalCSO + BusinessPlan_Funding + SDG_Other,
+                family = binomial(link = "probit"),
+                data = Data)
+```
+
+
+```{r echo=FALSE, results='asis'}
+stargazer(summary(eliminating)["coefficients"], align = T, header = F, font.size = "footnotesize")
+```
+
+
+
+
+
